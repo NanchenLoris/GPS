@@ -29,7 +29,7 @@ html, body {
 
 #map {
   flex: 1 1 auto;
-  min-height: 50vh;
+  min-height: 40vh;
   background: #1a222c;
 }
 
@@ -84,7 +84,8 @@ html, body {
 
 #controls {
   flex: 0 0 auto;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 6px;
   padding: 8px;
   background: var(--panel);
@@ -98,10 +99,12 @@ button {
   color: #05121f;
   font: inherit;
   font-weight: 600;
-  padding: 11px 12px;
+  padding: 11px 8px;
   border-radius: 8px;
-  flex: 1 1 auto;
   min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 button:disabled { opacity: .4; }
@@ -110,9 +113,6 @@ button.ghost {
   background: transparent;
   color: var(--fg);
   border-color: var(--line);
-  flex: 0 0 auto;
-  padding-left: 16px;
-  padding-right: 16px;
 }
 
 button.active {
