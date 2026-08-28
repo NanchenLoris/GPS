@@ -1,6 +1,6 @@
 // Minimal offline shell cache. Map tiles, OSM/Overpass and elevation data are
 // intentionally not cached.
-const CACHE = 'deadreckon-v2';
+const CACHE = 'deadreckon-v3';
 const SHELL = [
   './',
   './index.html',
@@ -11,16 +11,11 @@ const SHELL = [
   './js/pdr.js',
   './js/ahrs.js',
   './js/magcal.js',
-  './js/chart.js',
   './js/map.js',
   './js/geo.js',
   './js/utils.js',
   './js/roadgraph.js',
   './js/mapmatch.js',
-  './js/terrain.js',
-  './js/netfix.js',
-  './js/loop.js',
-  './js/model.js',
 ];
 
 self.addEventListener('install', (e) => {
