@@ -150,71 +150,92 @@ function maybeRefetch(ll) {
 
 // ---------------------------------------------------------------------------
 // Controls
+//
+// Flow: Turn on sensors -> place the start (tap the map, or "Use GPS location")
+// -> Start walking. Placing the start is only possible before walking begins;
+// once tracking starts the origin is locked. "Start over" unlocks it again.
 // ---------------------------------------------------------------------------
+let hasStart = false;
+
 $('btnEnable').addEventListener('click', async () => {
   const ok = await sensors.requestPermission();
   if (!ok) { setStatus('sensor permission denied', 'bad'); return; }
   sensors.start();
   sensorsOn = true;
-  setStatus('sensors on — set your start point', 'good');
-  $('btnStart').disabled = false;
   $('btnEnable').disabled = true;
+  $('btnGPS').disabled = false;
+  enablePlacing();
 });
 
-$('btnStart').addEventListener('click', () => {
-  if (!navigator.geolocation) { tapToStart(); return; }
+$('btnGPS').addEventListener('click', () => {
+  if (!navigator.geolocation) { setStatus('no geolocation on this device — tap the map instead', 'bad'); return; }
   setStatus('getting a GPS fix…', 'warn');
   navigator.geolocation.getCurrentPosition(
     (p) => {
       seedOrigin({ lat: p.coords.latitude, lng: p.coords.longitude }, p.coords.accuracy);
-      setStatus(`start set (±${p.coords.accuracy.toFixed(0)} m) — press Start`, 'good');
+      setStatus(`start set from GPS (±${p.coords.accuracy.toFixed(0)} m) — press Start walking`, 'good');
     },
-    () => {
-      setStatus('no GPS — tap your location on the map', 'warn');
-      tapToStart();
-    },
+    () => setStatus('GPS unavailable — tap the map where you are standing', 'bad'),
     { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 },
   );
 });
 
-function tapToStart() {
-  map.onClickOnce((latlng) => {
+function enablePlacing() {
+  map.onClick((latlng) => {
     seedOrigin(latlng, null);
-    setStatus('start set — press Start', 'good');
+    setStatus('start set — drag by tapping again, or press Start walking', 'good');
   });
+  setStatus('tap the map where you are standing (or press Use GPS location)', 'warn');
 }
 
 function seedOrigin(latlng, acc) {
   pdr.setOrigin(latlng, acc);
   map.setOrigin(latlng, acc);
+  map.setTrack([latlng]);
   graph = null; mm = null; graphBBox = null;
+  hasStart = true;
   $('btnTrack').disabled = false;
   $('btnReset').disabled = false;
   fetchWays(latlng);
 }
 
 $('btnTrack').addEventListener('click', async () => {
+  if (!tracking && !hasStart) return;
   tracking = !tracking;
   pdr.enabled = tracking;
-  $('btnTrack').textContent = tracking ? 'Stop' : 'Start';
+  $('btnTrack').textContent = tracking ? 'Stop' : 'Start walking';
   $('btnTrack').classList.toggle('active', tracking);
-  if (tracking) { setStatus('tracking', 'good'); await acquireWake(); }
-  else { setStatus('paused', 'warn'); releaseWake(); }
+  if (tracking) {
+    map.offClick();               // start point is locked once walking begins
+    $('btnGPS').disabled = true;
+    setStatus('tracking — start point locked', 'good');
+    await acquireWake();
+  } else {
+    setStatus('paused', 'warn');
+    releaseWake();
+  }
 });
 
 $('btnReset').addEventListener('click', () => {
-  const origin = pdr.origin ? { lat: pdr.origin.lat, lng: pdr.origin.lng } : null;
+  tracking = false;
+  pdr.enabled = false;
+  releaseWake();
   pdr.reset();
-  pdr.enabled = tracking;
-  if (mm) mm.reset();
-  if (origin) {
-    pdr.setOrigin(origin, 3);
-    map.setTrack([origin]);
-    map.setOrigin(origin, 3);
-  }
+  if (mm) { mm.reset(); mm = null; }
+  graph = null; graphBBox = null;
+  hasStart = false;
+  map.setSnapped(null);
+  map.setTrack([]);
+  $('btnTrack').textContent = 'Start walking';
+  $('btnTrack').classList.remove('active');
+  $('btnTrack').disabled = true;
+  $('btnReset').disabled = true;
+  $('btnGPS').disabled = false;
   set('rSteps', 0);
   set('rDist', '0 m');
+  set('rHeading', '–');
   set('rSigma', '–');
+  enablePlacing();                 // free to reposition the start again
 });
 
 // ---------------------------------------------------------------------------

@@ -102,5 +102,16 @@ export class TrackMap {
   }
 
   onClickOnce(cb) { this.map.once('click', (e) => cb(e.latlng)); }
+
+  // Repeatable map-click handler (used for placing / moving the start point).
+  onClick(cb) {
+    this.offClick();
+    this._clickCb = (e) => cb(e.latlng);
+    this.map.on('click', this._clickCb);
+  }
+  offClick() {
+    if (this._clickCb) { this.map.off('click', this._clickCb); this._clickCb = null; }
+  }
+
   invalidate() { setTimeout(() => this.map.invalidateSize(), 100); }
 }
