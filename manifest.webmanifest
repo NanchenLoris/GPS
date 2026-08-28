@@ -1,0 +1,19 @@
+{
+  "name": "Dead Reckoning",
+  "short_name": "DeadReckon",
+  "description": "Pedestrian dead reckoning from phone IMU sensors.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0f14",
+  "theme_color": "#0b0f14",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512'%3E%3Crect width='512' height='512' fill='%230b0f14'/%3E%3Ccircle cx='256' cy='256' r='150' fill='none' stroke='%2339a0ff' stroke-width='16'/%3E%3Ccircle cx='256' cy='256' r='24' fill='%2335d07f'/%3E%3Cpath d='M256 256 L256 96' stroke='%2339a0ff' stroke-width='16' stroke-linecap='round'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

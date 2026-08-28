@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="theme-color" content="#0b0f14" />
+<title>Dead Reckoning</title>
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<div id="app">
+  <div id="map"></div>
+
+  <div id="hud">
+    <canvas id="chart"></canvas>
+    <div id="readouts">
+      <div><b>status</b><span id="rStatus">idle</span></div>
+      <div><b>sensor Hz</b><span id="rHz">–</span></div>
+      <div><b>heading src</b><span id="rHeadSrc">–</span></div>
+      <div><b>compass</b><span id="rCompass">–</span></div>
+      <div><b>heading</b><span id="rHeading">–</span></div>
+      <div><b>gyro bias</b><span id="rBias">–</span></div>
+      <div><b>mag cal</b><span id="rMagCal">–</span></div>
+      <div><b>steps</b><span id="rSteps">0</span></div>
+      <div><b>cadence</b><span id="rCadence">–</span></div>
+      <div><b>stride ×</b><span id="rStride">1.00</span></div>
+      <div><b>path dist</b><span id="rDist">0 m</span></div>
+      <div><b>displacement</b><span id="rDisp">0 m</span></div>
+      <div><b>speed</b><span id="rSpeed">–</span></div>
+      <div><b>altitude Δ</b><span id="rAlt">–</span></div>
+      <div><b>map match</b><span id="rMM">off</span></div>
+      <div><b>on road</b><span id="rRoad">–</span></div>
+      <div><b>uncertainty</b><span id="rSigma">–</span></div>
+      <div><b>elapsed</b><span id="rElapsed">0 s</span></div>
+    </div>
+  </div>
+
+  <div id="controls">
+    <button id="btnEnable">Enable sensors</button>
+    <button id="btnGPS" disabled>Seed start · GPS</button>
+    <button id="btnMapStart" disabled>Seed start · tap map</button>
+    <button id="btnTrack" disabled>Start tracking</button>
+    <button id="btnReset" disabled>Reset track</button>
+    <button id="btnWaypoint" disabled>Drop waypoint</button>
+    <button id="btnReposition" disabled>Reposition · tap map</button>
+    <button id="btnCloseLoop" disabled>Close loop → start</button>
+    <button id="btnCalib" disabled>Calibrate stride</button>
+    <button id="btnCorr" class="ghost">Corrections</button>
+    <button id="btnSettings" class="ghost">Settings</button>
+  </div>
+
+  <div id="calib" hidden>
+    <h3>Stride calibration</h3>
+    <p>Enter a known distance, tap <b>Start</b>, walk it in a straight line at a
+       normal pace, then tap <b>Stop</b>.</p>
+    <label>Known distance (m)
+      <input id="cKnown" type="number" value="20" min="3" step="1" />
+    </label>
+    <div class="row">
+      <button id="btnCalibStart">Start</button>
+      <button id="btnCalibStop" disabled>Stop</button>
+    </div>
+    <p id="cResult" class="muted">–</p>
+    <div class="row">
+      <button id="btnCalibApply" disabled>Apply</button>
+      <button id="btnCalibClose" class="ghost">Close</button>
+    </div>
+  </div>
+
+  <div id="corrections" hidden>
+    <h3>Drift corrections</h3>
+    <p class="muted">Outdoor, no-GPS. Each layer is a small pull on the estimate;
+       defaults are conservative. Map matching and terrain need an internet
+       connection (for OSM / elevation data) but not GPS.</p>
+    <div id="corrFields"></div>
+    <div class="row">
+      <button id="btnLoadWays">Fetch OSM roads now</button>
+    </div>
+    <div class="row">
+      <label class="file">Load ways GeoJSON
+        <input id="mmFile" type="file" accept=".json,.geojson,application/json" />
+      </label>
+    </div>
+    <div class="row">
+      <button id="btnLoadModel" class="ghost">Load inertial model…</button>
+      <button id="btnCorrClose">Close</button>
+    </div>
+    <p id="corrMsg" class="muted"></p>
+  </div>
+
+  <div id="settings" hidden>
+    <h3>Settings</h3>
+    <label>Heading source
+      <select id="sHeadingMode">
+        <option value="fused">fused (gyro + compass)</option>
+        <option value="compass">compass only</option>
+        <option value="gyro">gyro-lock (ignore compass)</option>
+      </select>
+    </label>
+    <label>Stride model
+      <select id="sStepMode">
+        <option value="weinberg">Weinberg (K·amp^¼)</option>
+        <option value="constant">constant length</option>
+        <option value="height">height model (0.415·h)</option>
+      </select>
+    </label>
+    <label>Weinberg K <input id="sWeinbergK" type="number" step="0.01" /></label>
+    <label>Constant stride (m) <input id="sConstantL" type="number" step="0.01" /></label>
+    <label>Height (cm) <input id="sHeightCm" type="number" step="1" /></label>
+    <label>Peak threshold – high (m/s²) <input id="sThrHigh" type="number" step="0.1" /></label>
+    <label>Peak threshold – low (m/s²) <input id="sThrLow" type="number" step="0.05" /></label>
+    <label>Min step interval (ms) <input id="sMinStepMs" type="number" step="10" /></label>
+    <label>Min peak amplitude (m/s²) <input id="sMinAmp" type="number" step="0.1" /></label>
+    <label>Heading offset (°) <input id="sHeadingOffset" type="number" step="1" /></label>
+    <div class="row">
+      <button id="btnSettingsReset" class="ghost">Restore defaults</button>
+      <button id="btnSettingsClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script type="module" src="./js/app.js"></script>
+</body>
+</html>
